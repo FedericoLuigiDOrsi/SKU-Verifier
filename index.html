@@ -464,15 +464,10 @@ img { max-width: 100%; height: auto; display: block; }
   const getApiKey = () => localStorage.getItem('dirtytag_google_api_key');
 
   // ============================================
-  // SKU Validation
+  // SKU Normalization (no format restriction)
   // ============================================
   function normalizeSKU(input) {
-    const normalized = input.trim().toUpperCase();
-    const pattern = /^[A-Z]{2,3}-\d{4,6}$/;
-    if (!pattern.test(normalized)) {
-      throw new Error('Formato SKU non valido. Atteso: XX-NNNN (es. MF-2411)');
-    }
-    return normalized;
+    return input.trim().toUpperCase();
   }
 
   // ============================================
