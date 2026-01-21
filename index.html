@@ -132,6 +132,11 @@
             background: #9333ea;
         }
 
+        .btn-search:disabled {
+            background: var(--bg-tertiary);
+            cursor: not-allowed;
+        }
+
         .header-right {
             display: flex;
             align-items: center;
@@ -140,11 +145,12 @@
 
         .stats-row {
             display: flex;
-            gap: 16px;
+            gap: 20px;
         }
 
         .stat-item {
             text-align: center;
+            min-width: 70px;
         }
 
         .stat-value {
@@ -155,12 +161,29 @@
         .stat-value.green { color: var(--accent-green); }
         .stat-value.red { color: var(--accent-red); }
         .stat-value.yellow { color: var(--accent-yellow); }
+        .stat-value.blue { color: var(--accent-blue); }
 
         .stat-label {
             font-size: 0.55rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        .btn-refresh {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-refresh:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
         }
 
         .btn-settings {
@@ -395,10 +418,10 @@
             cursor: pointer;
             transition: all 0.2s;
             border: 2px solid;
+            background: transparent;
         }
 
         .action-btn.label-done {
-            background: transparent;
             border-color: var(--accent-green);
             color: var(--accent-green);
         }
@@ -409,20 +432,18 @@
             color: white;
         }
 
-        .action-btn.not-found {
-            background: transparent;
+        .action-btn.to-check {
             border-color: var(--accent-yellow);
             color: var(--accent-yellow);
         }
 
-        .action-btn.not-found:hover,
-        .action-btn.not-found.active {
+        .action-btn.to-check:hover,
+        .action-btn.to-check.active {
             background: var(--accent-yellow);
             color: black;
         }
 
         .action-btn.discard {
-            background: transparent;
             border-color: var(--accent-red);
             color: var(--accent-red);
         }
@@ -453,7 +474,7 @@
             color: var(--accent-green);
         }
 
-        .action-btn.not-found.active .checkbox-indicator {
+        .action-btn.to-check.active .checkbox-indicator {
             color: var(--accent-yellow);
         }
 
@@ -848,25 +869,26 @@
             </div>
             <div class="search-box" id="search-box" style="display: none;">
                 <input type="text" class="search-input" id="sku-search" placeholder="Cerca SKU...">
-                <button class="btn-search" onclick="searchSKU()">Cerca</button>
+                <button class="btn-search" id="btn-search">Cerca</button>
             </div>
         </div>
         <div class="header-right" id="header-stats" style="display: none;">
             <div class="stats-row">
                 <div class="stat-item">
-                    <div class="stat-value green" id="stat-labeled">0</div>
+                    <div class="stat-value green" id="stat-tagged">-</div>
                     <div class="stat-label">Etichettati</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value yellow" id="stat-notfound">0</div>
-                    <div class="stat-label">Non Trovati</div>
+                    <div class="stat-value yellow" id="stat-tocheck">-</div>
+                    <div class="stat-label">Da Rivedere</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value red" id="stat-discarded">0</div>
-                    <div class="stat-label">Scartati</div>
+                    <div class="stat-value blue" id="stat-remaining">-</div>
+                    <div class="stat-label">Da Verificare</div>
                 </div>
             </div>
-            <button class="btn-settings" onclick="openSettings()" title="Impostazioni">⚙</button>
+            <button class="btn-refresh" id="btn-refresh" title="Aggiorna contatori">↻ Refresh</button>
+            <button class="btn-settings" id="btn-settings" title="Impostazioni">⚙</button>
         </div>
     </header>
 
@@ -881,7 +903,7 @@
                 <input type="password" class="form-input" id="api-key" placeholder="pat...">
             </div>
             
-            <button class="btn-primary" onclick="startApp()">Avvia</button>
+            <button class="btn-primary" id="btn-start">Avvia</button>
         </div>
     </div>
 
@@ -894,44 +916,6 @@
                     <div class="empty-icon">🔍</div>
                     <h2 class="empty-title">Cerca un articolo</h2>
                     <p class="empty-text">Inserisci lo SKU nella barra di ricerca per verificare l'articolo</p>
-                </div>
-
-                <div id="product-content" style="display: none;">
-                    <!-- Photo Grid -->
-                    <div class="photo-grid">
-                        <div class="photo-card">
-                            <div class="photo-card-header">
-                                <span class="photo-card-title front">◆ FRONT</span>
-                            </div>
-                            <div class="photo-container" id="photo-front" onclick="openModal('front')">
-                                <div class="photo-placeholder">Nessuna foto</div>
-                            </div>
-                        </div>
-                        <div class="photo-card">
-                            <div class="photo-card-header">
-                                <span class="photo-card-title back">◆ BACK</span>
-                            </div>
-                            <div class="photo-container" id="photo-back" onclick="openModal('back')">
-                                <div class="photo-placeholder">Nessuna foto</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <button class="action-btn label-done" id="btn-label" onclick="toggleAction('labeled')">
-                            <span class="checkbox-indicator" id="check-label">✓</span>
-                            <span>Label Inserita</span>
-                        </button>
-                        <button class="action-btn not-found" id="btn-notfound" onclick="toggleAction('notfound')">
-                            <span class="checkbox-indicator" id="check-notfound">?</span>
-                            <span>Non Trovato</span>
-                        </button>
-                        <button class="action-btn discard" id="btn-discard" onclick="toggleAction('discard')">
-                            <span class="checkbox-indicator" id="check-discard">✕</span>
-                            <span>Da Scartare</span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -952,7 +936,7 @@
                         <div class="control-section">
                             <div class="control-label">
                                 Informazioni Prodotto
-                                <button class="edit-toggle" id="edit-toggle" onclick="toggleEditMode()">Modifica</button>
+                                <button class="edit-toggle" id="edit-toggle">Modifica</button>
                             </div>
                             <div class="info-grid" id="product-info">
                                 <div class="info-row">
@@ -992,7 +976,7 @@
                         <div class="control-section">
                             <div class="control-label">
                                 Modifica Dettagli
-                                <button class="edit-toggle active" onclick="toggleEditMode()">Chiudi</button>
+                                <button class="edit-toggle active" id="edit-close">Chiudi</button>
                             </div>
                             
                             <div class="editable-field">
@@ -1055,17 +1039,17 @@
                 </div>
 
                 <div class="controls-footer">
-                    <button class="btn-save" id="btn-save" onclick="saveChanges()" disabled>
+                    <button class="btn-save" id="btn-save" disabled>
                         💾 Salva Modifiche
                     </button>
-                    <button class="btn-next" onclick="clearSearch()">
+                    <button class="btn-next" id="btn-clear">
                         Nuova Ricerca →
                     </button>
                 </div>
 
                 <div class="keyboard-hints">
-                    <div class="hint"><kbd>L</kbd> Label</div>
-                    <div class="hint"><kbd>N</kbd> Non Trovato</div>
+                    <div class="hint"><kbd>T</kbd> Tagged</div>
+                    <div class="hint"><kbd>C</kbd> To Check</div>
                     <div class="hint"><kbd>X</kbd> Scarta</div>
                     <div class="hint"><kbd>S</kbd> Salva</div>
                     <div class="hint"><kbd>E</kbd> Modifica</div>
@@ -1075,7 +1059,7 @@
     </div>
 
     <!-- Modal -->
-    <div class="modal" id="modal" onclick="closeModal()">
+    <div class="modal" id="modal">
         <span class="modal-close">×</span>
         <img id="modal-img" src="" alt="Full size">
     </div>
@@ -1090,25 +1074,56 @@
         
         let API_KEY = '';
         let currentRecord = null;
-        let currentAction = null; // 'labeled', 'notfound', 'discard'
+        let currentAction = null; // 'tagged', 'tocheck', 'discard'
         let editMode = false;
         let hasChanges = false;
         
         let stats = {
-            labeled: parseInt(localStorage.getItem('labelverifier_labeled') || '0'),
-            notfound: parseInt(localStorage.getItem('labelverifier_notfound') || '0'),
-            discarded: parseInt(localStorage.getItem('labelverifier_discarded') || '0')
+            tagged: 0,
+            tocheck: 0,
+            remaining: 0
         };
 
-        // Init
-        window.onload = function() {
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            
             const savedKey = localStorage.getItem('dirtytag_api_key_v3');
             if (savedKey) {
                 document.getElementById('api-key').value = savedKey;
             }
-            updateStatsUI();
-        };
 
+            // Bind event listeners
+            document.getElementById('btn-start').addEventListener('click', startApp);
+            document.getElementById('btn-search').addEventListener('click', function() {
+                console.log('Search button clicked');
+                searchSKU();
+            });
+            document.getElementById('sku-search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    console.log('Enter pressed in search');
+                    searchSKU();
+                }
+            });
+            document.getElementById('btn-refresh').addEventListener('click', loadCounters);
+            document.getElementById('btn-settings').addEventListener('click', openSettings);
+            document.getElementById('edit-toggle').addEventListener('click', toggleEditMode);
+            document.getElementById('edit-close').addEventListener('click', toggleEditMode);
+            document.getElementById('btn-save').addEventListener('click', saveChanges);
+            document.getElementById('btn-clear').addEventListener('click', clearSearch);
+            document.getElementById('modal').addEventListener('click', closeModal);
+            
+            // API key enter
+            document.getElementById('api-key').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') startApp();
+            });
+        });
+
+        // ============================================
+        // APP START
+        // ============================================
         function startApp() {
             const key = document.getElementById('api-key').value.trim();
             if (!key) {
@@ -1123,9 +1138,15 @@
             document.getElementById('search-box').style.display = 'flex';
             document.getElementById('header-stats').style.display = 'flex';
             
+            // Load counters from Airtable
+            loadCounters();
+            
             document.getElementById('sku-search').focus();
         }
 
+        // ============================================
+        // TOAST
+        // ============================================
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -1133,62 +1154,88 @@
             setTimeout(() => toast.className = 'toast', 2500);
         }
 
-        function updateStatsUI() {
-            document.getElementById('stat-labeled').textContent = stats.labeled;
-            document.getElementById('stat-notfound').textContent = stats.notfound;
-            document.getElementById('stat-discarded').textContent = stats.discarded;
+        // ============================================
+        // LOAD COUNTERS FROM AIRTABLE
+        // ============================================
+        async function loadCounters() {
+            console.log('Loading counters...');
+            document.getElementById('stat-tagged').textContent = '...';
+            document.getElementById('stat-tocheck').textContent = '...';
+            document.getElementById('stat-remaining').textContent = '...';
+
+            try {
+                // Count Tagged_Checkbox = true
+                const taggedCount = await countRecords("{Tagged_Checkbox} = TRUE()");
+                stats.tagged = taggedCount;
+                document.getElementById('stat-tagged').textContent = taggedCount;
+
+                // Count To_Check = true
+                const tocheckCount = await countRecords("{To_Check} = TRUE()");
+                stats.tocheck = tocheckCount;
+                document.getElementById('stat-tocheck').textContent = tocheckCount;
+
+                // Count remaining: NOT Tagged and NOT To_Check and NOT Discarded
+                // Quelli da verificare = quelli senza Tagged_Checkbox e senza Product_Status = DISCARDED
+                const remainingCount = await countRecords("AND({Tagged_Checkbox} = FALSE(), OR({Product_Status} = '', {Product_Status} != 'DISCARDED'))");
+                stats.remaining = remainingCount;
+                document.getElementById('stat-remaining').textContent = remainingCount;
+
+                console.log('Counters loaded:', stats);
+
+            } catch (error) {
+                console.error('Error loading counters:', error);
+                showToast('Errore caricamento contatori', 'error');
+                document.getElementById('stat-tagged').textContent = '?';
+                document.getElementById('stat-tocheck').textContent = '?';
+                document.getElementById('stat-remaining').textContent = '?';
+            }
         }
 
-        async function apiRequest(table, options = {}) {
-            let url = `https://api.airtable.com/v0/${BASE_ID}/${table}`;
+        async function countRecords(filterFormula) {
+            let count = 0;
+            let offset = null;
             
-            if (options.recordId) {
-                url += `/${options.recordId}`;
-            }
-            
-            const params = new URLSearchParams();
-            if (options.filterByFormula) {
-                params.append('filterByFormula', options.filterByFormula);
-            }
-            
-            const queryString = params.toString();
-            if (queryString && !options.recordId) {
-                url += `?${queryString}`;
-            }
+            do {
+                const params = new URLSearchParams();
+                params.append('filterByFormula', filterFormula);
+                params.append('fields[]', 'SKU'); // Minimal field to reduce payload
+                params.append('pageSize', '100');
+                if (offset) params.append('offset', offset);
 
-            const fetchOptions = {
-                headers: {
-                    'Authorization': `Bearer ${API_KEY}`,
-                    'Content-Type': 'application/json'
+                const url = `https://api.airtable.com/v0/${BASE_ID}/${INVENTARIO_TABLE}?${params}`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
                 }
-            };
 
-            if (options.method) {
-                fetchOptions.method = options.method;
-            }
-            if (options.body) {
-                fetchOptions.body = JSON.stringify(options.body);
-            }
+                const data = await response.json();
+                count += data.records.length;
+                offset = data.offset;
+            } while (offset);
 
-            const response = await fetch(url, fetchOptions);
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status} - ${JSON.stringify(data.error || data)}`);
-            }
-
-            return data;
+            return count;
         }
 
+        // ============================================
+        // SEARCH SKU
+        // ============================================
         async function searchSKU() {
             const skuInput = document.getElementById('sku-search').value.trim().toUpperCase();
+            console.log('Searching for:', skuInput);
+            
             if (!skuInput) {
                 showToast('Inserisci uno SKU', 'error');
                 return;
             }
 
-            document.getElementById('empty-state').style.display = 'none';
-            document.getElementById('product-content').style.display = 'none';
+            // Show loading
             document.getElementById('photo-section').innerHTML = `
                 <div class="loading">
                     <div class="loading-spinner"></div>
@@ -1197,9 +1244,25 @@
             `;
 
             try {
-                const data = await apiRequest(INVENTARIO_TABLE, {
-                    filterByFormula: `{SKU}='${skuInput}'`
+                const params = new URLSearchParams();
+                params.append('filterByFormula', `{SKU}='${skuInput}'`);
+
+                const url = `https://api.airtable.com/v0/${BASE_ID}/${INVENTARIO_TABLE}?${params}`;
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response:', data);
 
                 if (!data.records || data.records.length === 0) {
                     showEmptyResult(skuInput);
@@ -1210,6 +1273,7 @@
                 renderProduct(currentRecord);
 
             } catch (error) {
+                console.error('Search error:', error);
                 showToast(`Errore: ${error.message}`, 'error');
                 showEmptyState();
             }
@@ -1235,8 +1299,12 @@
             `;
         }
 
+        // ============================================
+        // RENDER PRODUCT
+        // ============================================
         function renderProduct(record) {
             const fields = record.fields;
+            console.log('Rendering product:', fields.SKU, fields);
             
             // Reset state
             currentAction = null;
@@ -1245,13 +1313,8 @@
             document.getElementById('btn-save').disabled = true;
             document.getElementById('info-readonly').style.display = 'block';
             document.getElementById('info-editable').style.display = 'none';
-            
-            // Reset action buttons
-            ['btn-label', 'btn-notfound', 'btn-discard'].forEach(id => {
-                document.getElementById(id).classList.remove('active');
-            });
 
-            // Rebuild photo section
+            // Build photo section
             document.getElementById('photo-section').innerHTML = `
                 <div id="product-content">
                     <div class="photo-grid">
@@ -1259,7 +1322,7 @@
                             <div class="photo-card-header">
                                 <span class="photo-card-title front">◆ FRONT</span>
                             </div>
-                            <div class="photo-container" id="photo-front" onclick="openModal('front')">
+                            <div class="photo-container" id="photo-front">
                                 ${renderPhoto(fields.AI_Front_Image_Link || fields.rawID_FRONT, 'front')}
                             </div>
                         </div>
@@ -1267,28 +1330,37 @@
                             <div class="photo-card-header">
                                 <span class="photo-card-title back">◆ BACK</span>
                             </div>
-                            <div class="photo-container" id="photo-back" onclick="openModal('back')">
+                            <div class="photo-container" id="photo-back">
                                 ${renderPhoto(fields.AI_Back_Image_Link || fields.rawID_BACK, 'back')}
                             </div>
                         </div>
                     </div>
 
                     <div class="action-buttons">
-                        <button class="action-btn label-done" id="btn-label" onclick="toggleAction('labeled')">
-                            <span class="checkbox-indicator" id="check-label">✓</span>
+                        <button class="action-btn label-done" id="btn-tagged">
+                            <span class="checkbox-indicator">✓</span>
                             <span>Label Inserita</span>
                         </button>
-                        <button class="action-btn not-found" id="btn-notfound" onclick="toggleAction('notfound')">
-                            <span class="checkbox-indicator" id="check-notfound">?</span>
-                            <span>Non Trovato</span>
+                        <button class="action-btn to-check" id="btn-tocheck">
+                            <span class="checkbox-indicator">?</span>
+                            <span>Da Rivedere</span>
                         </button>
-                        <button class="action-btn discard" id="btn-discard" onclick="toggleAction('discard')">
-                            <span class="checkbox-indicator" id="check-discard">✕</span>
+                        <button class="action-btn discard" id="btn-discard">
+                            <span class="checkbox-indicator">✕</span>
                             <span>Da Scartare</span>
                         </button>
                     </div>
                 </div>
             `;
+
+            // Bind action button events
+            document.getElementById('btn-tagged').addEventListener('click', () => toggleAction('tagged'));
+            document.getElementById('btn-tocheck').addEventListener('click', () => toggleAction('tocheck'));
+            document.getElementById('btn-discard').addEventListener('click', () => toggleAction('discard'));
+            
+            // Bind photo click for modal
+            document.getElementById('photo-front').addEventListener('click', () => openModalPhoto('front'));
+            document.getElementById('photo-back').addEventListener('click', () => openModalPhoto('back'));
 
             // Update SKU display
             document.getElementById('sku-display').style.display = 'flex';
@@ -1312,15 +1384,15 @@
             document.getElementById('edit-gender').value = fields.gender || '';
             document.getElementById('edit-condition').value = fields.Condizione || '';
 
-            // Clear notes
+            // Notes
             document.getElementById('notes-input').value = fields['Note Prodotto'] || '';
 
-            // Check existing label status
-            if (fields.Label_Status === 'LABELED') {
-                toggleAction('labeled', true);
-            } else if (fields.Label_Status === 'NOT_FOUND') {
-                toggleAction('notfound', true);
-            } else if (fields.Label_Status === 'DISCARDED') {
+            // Check existing status from Airtable
+            if (fields.Tagged_Checkbox === true) {
+                toggleAction('tagged', true);
+            } else if (fields.To_Check === true) {
+                toggleAction('tocheck', true);
+            } else if (fields.Product_Status === 'DISCARDED') {
                 toggleAction('discard', true);
             }
         }
@@ -1357,40 +1429,46 @@
             return map[gender] || gender;
         }
 
+        // ============================================
+        // ACTION BUTTONS
+        // ============================================
         function toggleAction(action, silent = false) {
             const btnMap = {
-                'labeled': 'btn-label',
-                'notfound': 'btn-notfound',
+                'tagged': 'btn-tagged',
+                'tocheck': 'btn-tocheck',
                 'discard': 'btn-discard'
             };
 
             // Deselect all
             Object.values(btnMap).forEach(id => {
-                document.getElementById(id).classList.remove('active');
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
             });
 
             if (currentAction === action) {
                 currentAction = null;
             } else {
                 currentAction = action;
-                document.getElementById(btnMap[action]).classList.add('active');
+                const btn = document.getElementById(btnMap[action]);
+                if (btn) btn.classList.add('active');
             }
 
             hasChanges = true;
             document.getElementById('btn-save').disabled = false;
 
-            if (!silent) {
+            if (!silent && currentAction) {
                 const msgs = {
-                    'labeled': 'Label inserita ✓',
-                    'notfound': 'Articolo non trovato',
+                    'tagged': 'Label inserita ✓',
+                    'tocheck': 'Segnato da rivedere',
                     'discard': 'Articolo da scartare'
                 };
-                if (currentAction) {
-                    showToast(msgs[currentAction], currentAction === 'labeled' ? 'success' : currentAction === 'discard' ? 'error' : 'warning');
-                }
+                showToast(msgs[currentAction], currentAction === 'tagged' ? 'success' : currentAction === 'discard' ? 'error' : 'warning');
             }
         }
 
+        // ============================================
+        // EDIT MODE
+        // ============================================
         function toggleEditMode() {
             editMode = !editMode;
             document.getElementById('info-readonly').style.display = editMode ? 'none' : 'block';
@@ -1402,6 +1480,9 @@
             }
         }
 
+        // ============================================
+        // SAVE CHANGES
+        // ============================================
         async function saveChanges() {
             if (!currentRecord) return;
             
@@ -1412,14 +1493,17 @@
             try {
                 const updateFields = {};
                 
-                // Set label status
-                if (currentAction === 'labeled') {
-                    updateFields['Label_Status'] = 'LABELED';
-                } else if (currentAction === 'notfound') {
-                    updateFields['Label_Status'] = 'NOT_FOUND';
+                // Set checkbox fields based on action
+                if (currentAction === 'tagged') {
+                    updateFields['Tagged_Checkbox'] = true;
+                    updateFields['To_Check'] = false;
+                } else if (currentAction === 'tocheck') {
+                    updateFields['To_Check'] = true;
+                    updateFields['Tagged_Checkbox'] = false;
                 } else if (currentAction === 'discard') {
-                    updateFields['Label_Status'] = 'DISCARDED';
                     updateFields['Product_Status'] = 'DISCARDED';
+                    updateFields['Tagged_Checkbox'] = false;
+                    updateFields['To_Check'] = false;
                 }
 
                 // Get editable field values if in edit mode
@@ -1447,41 +1531,46 @@
                     updateFields['Note Prodotto'] = notes;
                 }
 
+                console.log('Saving fields:', updateFields);
+
                 // Update Airtable
-                await apiRequest(INVENTARIO_TABLE, {
-                    recordId: currentRecord.id,
+                const url = `https://api.airtable.com/v0/${BASE_ID}/${INVENTARIO_TABLE}/${currentRecord.id}`;
+                const response = await fetch(url, {
                     method: 'PATCH',
-                    body: { fields: updateFields }
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fields: updateFields })
                 });
 
-                // Update stats
-                if (currentAction === 'labeled') {
-                    stats.labeled++;
-                    localStorage.setItem('labelverifier_labeled', stats.labeled);
-                } else if (currentAction === 'notfound') {
-                    stats.notfound++;
-                    localStorage.setItem('labelverifier_notfound', stats.notfound);
-                } else if (currentAction === 'discard') {
-                    stats.discarded++;
-                    localStorage.setItem('labelverifier_discarded', stats.discarded);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `API Error: ${response.status}`);
                 }
-                updateStatsUI();
 
                 showToast(`${currentRecord.fields.SKU} salvato ✓`, 'success');
                 
                 hasChanges = false;
                 btn.textContent = '💾 Salva Modifiche';
                 
+                // Reload counters
+                loadCounters();
+                
                 // Clear for next search
                 clearSearch();
 
             } catch (error) {
+                console.error('Save error:', error);
                 showToast(`Errore: ${error.message}`, 'error');
                 btn.disabled = false;
                 btn.textContent = '💾 Salva Modifiche';
             }
         }
 
+        // ============================================
+        // CLEAR SEARCH
+        // ============================================
         function clearSearch() {
             currentRecord = null;
             currentAction = null;
@@ -1500,7 +1589,10 @@
             document.getElementById('sku-search').focus();
         }
 
-        function openModal(type) {
+        // ============================================
+        // MODAL
+        // ============================================
+        function openModalPhoto(type) {
             if (!currentRecord) return;
             const fields = currentRecord.fields;
             
@@ -1528,24 +1620,22 @@
             document.getElementById('modal').classList.remove('active');
         }
 
+        // ============================================
+        // SETTINGS
+        // ============================================
         function openSettings() {
-            // Simple settings - just show current API key status
             const hasKey = !!localStorage.getItem('dirtytag_api_key_v3');
-            if (confirm(`API Key: ${hasKey ? 'Configurata ✓' : 'Non configurata'}\n\nVuoi cancellare i dati salvati?`)) {
+            if (confirm(`API Key: ${hasKey ? 'Configurata ✓' : 'Non configurata'}\n\nVuoi cancellare i dati salvati e rifare login?`)) {
                 localStorage.removeItem('dirtytag_api_key_v3');
-                localStorage.removeItem('labelverifier_labeled');
-                localStorage.removeItem('labelverifier_notfound');
-                localStorage.removeItem('labelverifier_discarded');
                 location.reload();
             }
         }
 
-        // Keyboard shortcuts
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
-                if (e.key === 'Enter' && e.target.id === 'sku-search') {
-                    searchSKU();
-                }
                 return;
             }
             
@@ -1553,11 +1643,11 @@
                 case 'escape':
                     closeModal();
                     break;
-                case 'l':
-                    if (currentRecord) toggleAction('labeled');
+                case 't':
+                    if (currentRecord) toggleAction('tagged');
                     break;
-                case 'n':
-                    if (currentRecord) toggleAction('notfound');
+                case 'c':
+                    if (currentRecord) toggleAction('tocheck');
                     break;
                 case 'x':
                     if (currentRecord) toggleAction('discard');

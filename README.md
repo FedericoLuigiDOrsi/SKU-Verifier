@@ -1,145 +1,228 @@
-# SKU Verifier — DirtyTag 3.0
+# DirtyTag WebApps
 
-Webapp per verifica rapida stato prodotto e validazione FileID foto.
+> Suite di strumenti web per la gestione dell'inventario e quality control di DirtyTag — Vintage Fashion E-commerce
 
-## Features
-
-- **Verifica Status Prodotto** — Pipeline state e metadata da Airtable
-- **Browse Foto Cartella** — Tutte le immagini nella cartella Google Drive collegata
-- **Validazione FRONT/BACK** — Check FileID selezionati vs contenuto cartella
-- **Dark/Light Mode** — Supporto automatico tema sistema
-- **Mobile Responsive** — Layout adattivo per tutti i dispositivi
-
-## Setup Locale
-
-1. Clone repository
-```bash
-git clone https://github.com/[username]/sku-verifier.git
-cd sku-verifier
-```
-
-2. Apri `index.html` nel browser (o usa un server locale)
-```bash
-# Con Python
-python -m http.server 8000
-
-# Con Node.js
-npx serve
-```
-
-3. Click **Settings** (⚙️) → Aggiungi Airtable PAT
-
-4. (Opzionale) Aggiungi Google API Key per listing cartelle
-
-## Deploy su GitHub Pages
-
-1. Push repository su GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/[username]/sku-verifier.git
-git push -u origin main
-```
-
-2. Settings → Pages → Deploy from main branch
-
-3. Accedi a `https://[username].github.io/sku-verifier/`
-
-## Configurazione
-
-### Airtable PAT (Richiesto)
-
-1. Vai su [airtable.com/create/tokens](https://airtable.com/create/tokens)
-2. Crea nuovo Personal Access Token
-3. Aggiungi scope: `data.records:read`
-4. Aggiungi access alla base "DirtyTag 3.0"
-5. Copia il token (inizia con `pat...`)
-6. Incolla in Settings webapp
-
-### Google API Key (Opzionale)
-
-Necessario solo per listare contenuti cartelle Drive.
-
-1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Crea progetto o seleziona esistente
-3. APIs & Services → Enable APIs → Google Drive API
-4. Credentials → Create Credentials → API Key
-5. Restrict API Key a "Google Drive API" (consigliato)
-6. Copia e incolla in Settings webapp
-
-> **Nota:** Senza API Key, le cartelle mostreranno solo un link per aprirle manualmente in Drive.
-
-## Struttura File
-
-```
-sku-verifier/
-├── index.html          # Single page app
-├── css/
-│   └── styles.css      # Tutti gli stili
-├── js/
-│   ├── app.js          # Logica applicativa principale
-│   ├── airtable.js     # Airtable API helpers
-│   ├── drive.js        # Google Drive helpers
-│   └── ui.js           # Manipolazione DOM
-├── README.md           # Questa documentazione
-└── .nojekyll           # Config GitHub Pages
-```
-
-## URL Parameters
-
-Puoi linkare direttamente a uno SKU specifico:
-
-```
-https://[username].github.io/sku-verifier/?sku=MF-2411
-```
-
-## Keyboard Shortcuts
-
-| Shortcut | Azione |
-|----------|--------|
-| `Enter` | Cerca SKU |
-| `Ctrl/Cmd + K` | Focus campo ricerca |
-| `Escape` | Chiudi modal settings |
-
-## Sicurezza
-
-- ✅ Token salvati solo in `localStorage` del browser locale
-- ✅ Nessun token inviato a server esterni (solo Airtable/Google APIs)
-- ✅ Non condividere URL con token embedded
-- ⚠️ Ogni utente deve configurare i propri token
-
-## Troubleshooting
-
-### "Token non valido"
-- Verifica che il PAT inizi con `pat`
-- Controlla che il token abbia accesso alla base corretta
-- Rigenera il token se necessario
-
-### "SKU non trovato"
-- Verifica formato: `XX-NNNN` (es. MF-2411)
-- Controlla maiuscole/minuscole
-
-### "Listing cartella non disponibile"
-- Cartella non pubblica/condivisa
-- API Key Google mancante o non valida
-- API Drive non abilitata nel progetto Cloud
-
-### Errori nella console
-1. Apri Developer Tools (F12)
-2. Tab Console
-3. Cerca errori rossi per dettagli
-
-## Test SKUs
-
-Usa questi SKU per testing (verifica esistenza nel tuo database):
-
-| SKU | Stato Atteso |
-|-----|--------------|
-| MF-2411 | AI_GENERATED |
-| CG-2961 | RAW_PROCESSED |
+![Version](https://img.shields.io/badge/version-3.0-purple)
+![Platform](https://img.shields.io/badge/platform-Web-blue)
+![Airtable](https://img.shields.io/badge/backend-Airtable-yellow)
 
 ---
 
-**DirtyTag 3.0** — Vintage Fashion Automation
+## 📦 Contenuto Repository
+
+| Tool | Descrizione | File |
+|------|-------------|------|
+| **AI Photo QC** | Quality check foto AI-generate con approvazione/rigenerazione | `ai_photo_qc.html` |
+| **Label Verifier** | Verifica articoli e gestione etichette inventario | `label_verifier.html` |
+
+---
+
+## 🚀 AI Photo QC Review
+
+Sistema di quality check per le foto generate dall'AI. Permette di confrontare le foto RAW originali con quelle processate dall'AI e decidere se approvarle o rigenerarle.
+
+### Funzionalità
+
+- ✅ **Approvazione** foto AI con selezione versione
+- 🔄 **Rigenerazione selettiva** (FRONT / BACK / BOTH)
+- ⏸ **Scarto per check secondario** (DEFERRED)
+- 📊 **Contatori in tempo reale** (pending, approved, regenerated, deferred)
+- 🖼 **Zoom foto** con click
+- ⌨️ **Shortcut tastiera** per workflow veloce
+
+### Shortcut Tastiera
+
+| Tasto | Azione |
+|-------|--------|
+| `A` | Approva versione |
+| `R` | Rigenera selezionate |
+| `D` | Scarta per check secondario |
+| `→` | Salta prodotto |
+| `F` | Toggle rigenera FRONT |
+| `B` | Toggle rigenera BACK |
+| `1-9` | Seleziona versione |
+| `Esc` | Chiudi modal |
+
+### Campi Airtable Richiesti
+
+```
+AI_Quality_Check      (Single Select)  → PENDING | APPROVED | REJECTED | DEFERRED
+AI_Approved_Version   (Number)         → Versione approvata
+AI_Regenerate_Trigger (Checkbox)       → Trigger per workflow rigenerazione
+AI_Regen_Scope        (Single Select)  → FRONT | BACK | BOTH
+AI_Regeneration_Count (Number)         → Contatore versioni
+AI_Front_Image_Link   (URL)            → Link foto AI front
+AI_Back_Image_Link    (URL)            → Link foto AI back
+RAW_Front_URL         (URL)            → Link foto RAW front
+RAW_Back_URL          (URL)            → Link foto RAW back
+Product_Status        (Single Select)  → Status prodotto
+```
+
+---
+
+## 🏷 Label Verifier
+
+Strumento per la verifica fisica degli articoli in magazzino e gestione delle etichette.
+
+### Funzionalità
+
+- 🔍 **Ricerca SKU** con visualizzazione foto e dettagli
+- ✅ **Tagged Checkbox** — Segna articoli con etichetta già applicata
+- ❓ **To Check** — Segna articoli da rivedere
+- ❌ **Scarta** — Rimuovi articoli dall'inventario (macchie, errori DB, ecc.)
+- ✏️ **Modifica dettagli** — Categoria, brand, colore, taglia, condizione
+- 📝 **Note** — Aggiungi note su difetti o problemi
+- 📊 **Contatori live da Airtable**
+
+### Shortcut Tastiera
+
+| Tasto | Azione |
+|-------|--------|
+| `T` | Toggle Tagged (label inserita) |
+| `C` | Toggle To Check (da rivedere) |
+| `X` | Scarta articolo |
+| `S` | Salva modifiche |
+| `E` | Modalità modifica |
+| `/` | Focus ricerca |
+| `Esc` | Chiudi modal |
+
+### Campi Airtable Richiesti
+
+```
+SKU                   (Text)           → Codice SKU articolo
+Tagged_Checkbox       (Checkbox)       → Etichetta fisica applicata
+To_Check              (Checkbox)       → Da rivedere
+Product_Status        (Single Select)  → DISCARDED per articoli scartati
+Category              (Text/Select)    → Categoria
+Sub-Category          (Text/Select)    → Sottocategoria
+Brand_TXT             (Text)           → Brand
+Colors                (Text/Array)     → Colori
+Size (INT)            (Text)           → Taglia
+gender                (Single Select)  → M | F | U
+Condizione            (Single Select)  → Condizione articolo
+Note Prodotto         (Long Text)      → Note aggiuntive
+AI_Front_Image_Link   (URL)            → Foto front
+AI_Back_Image_Link    (URL)            → Foto back
+rawID_FRONT           (Text)           → Google Drive File ID front
+rawID_BACK            (Text)           → Google Drive File ID back
+```
+
+---
+
+## ⚙️ Configurazione
+
+### 1. Airtable API Key
+
+Entrambi i tool richiedono un **Personal Access Token** di Airtable:
+
+1. Vai su [airtable.com/create/tokens](https://airtable.com/create/tokens)
+2. Crea un nuovo token con scope:
+   - `data.records:read`
+   - `data.records:write`
+3. Aggiungi la base DirtyTag agli accessi
+4. Copia il token (inizia con `pat...`)
+
+### 2. Base ID e Table ID
+
+I tool sono preconfigurati per la base DirtyTag 3.0:
+
+```javascript
+const BASE_ID = 'apptD8GSxN3vhhivI';
+const INVENTARIO_TABLE = 'tblddAcLcQAyk050u';
+```
+
+Per usare una base diversa, modifica questi valori nel file HTML.
+
+### 3. Google Drive (Opzionale)
+
+Per visualizzare le thumbnail delle foto da Google Drive, le immagini devono essere condivise pubblicamente o con link.
+
+---
+
+## 🖥 Utilizzo
+
+1. Apri il file HTML nel browser
+2. Inserisci la API Key di Airtable
+3. Clicca "Avvia"
+
+I token vengono salvati in `localStorage` per sessioni future.
+
+---
+
+## 📁 Struttura File
+
+```
+dirtytag-webapps/
+├── README.md
+├── ai_photo_qc.html          # AI Photo QC Review
+├── label_verifier.html       # Label Verifier
+└── assets/
+    └── screenshots/          # Screenshot per documentazione
+```
+
+---
+
+## 🎨 Design System
+
+Entrambi i tool condividono lo stesso design system:
+
+- **Font**: JetBrains Mono (monospace), Space Grotesk (headings)
+- **Tema**: Dark mode nativo
+- **Colori**:
+  - 🔴 Accent Red: `#e31e24`
+  - 🟢 Success Green: `#00d26a`
+  - 🔵 Info Blue: `#3b82f6`
+  - 🟡 Warning Yellow: `#eab308`
+  - 🟣 Purple (Label Verifier): `#a855f7`
+
+---
+
+## 🔗 Integrazione n8n
+
+I tool sono progettati per integrarsi con workflow n8n:
+
+### AI Photo QC → n8n
+
+Quando un prodotto viene **rigenerato**:
+- `AI_Quality_Check` = `REJECTED`
+- `AI_Regenerate_Trigger` = `true`
+- `AI_Regen_Scope` = `FRONT` | `BACK` | `BOTH`
+
+Il workflow n8n può triggerarsi su questi campi per avviare la rigenerazione automatica.
+
+### Label Verifier → n8n
+
+I campi `Tagged_Checkbox` e `To_Check` possono essere usati per:
+- Generare report degli articoli da verificare
+- Automatizzare la gestione dell'inventario
+- Sincronizzare con altri sistemi
+
+---
+
+## 📋 Changelog
+
+### v3.0 (Gennaio 2026)
+- ✨ Nuovo Label Verifier con counter da Airtable
+- ✨ Funzionalità DEFERRED per AI Photo QC
+- 🎨 Design system unificato
+- ⚡ Ottimizzazioni performance
+- 🐛 Fix ricerca SKU
+
+### v2.0
+- 🚀 AI Photo QC con versioning
+- 🔄 Rigenerazione selettiva FRONT/BACK
+
+### v1.0
+- 📦 Release iniziale
+
+---
+
+## 🤝 Contributi
+
+Per bug report o feature request, contatta il team DirtyTag.
+
+---
+
+## 📄 Licenza
+
+Proprietario — DirtyTag © 2026
